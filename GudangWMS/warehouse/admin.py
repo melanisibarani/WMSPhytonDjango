@@ -16,7 +16,7 @@ class TransaksiAdmin(admin.ModelAdmin):
 
     from django.contrib import admin
 
-@admin.register(Supplier)
+@admin.register(Supplier) 
 class SupplierAdmin(admin.ModelAdmin):
     list_display = ("nama_supplier", "telepon")   # kolom yg tampil
     search_fields = ("nama_supplier", "telepon") # bisa search
