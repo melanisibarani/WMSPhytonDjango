@@ -1,0 +1,165 @@
+﻿{% extends "warehouse/base.html" %}
+
+{% block title %}Barang Masuk{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📥 Barang Masuk</h2>
+<!-- Tambahin di bawah input Kode Barang -->
+<div class="card mt-3">
+    <div class="card-header">Scan QR Code</div>
+    <div class="card-body text-center">
+        <div id="reader" style="width: 350px; margin:auto;"></div>
+        <button class="btn btn-danger mt-2" onclick="stopScanner()">Stop Scanning</button>
+    </div>
+    <div class="card mt-3">
+        <div class="card-header">Upload QR Code</div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'upload_qr' %}">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="file" name="qr_file" accept="image/*" class="form-control" required>
+                    <button type="submit" class="btn btn-primary">Upload & Decode</button>
+                </div>
+            </form>
+
+            {% if qr_result %}
+            <div class="alert alert-info mt-3">
+                <strong>Hasil QR:</strong> {{ qr_result }}
+            </div>
+            <script>
+            // Kalau ada hasil decode, langsung isi ke input kode_barang
+                 document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById("kode_barang").value = "{{ qr_result }}";
+            });
+            </script>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let html5QrCode;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById("kode_barang").value = decodedText; // isi input otomatis
+    }
+
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, // kamera belakang hp/laptop
+            { fps: 10, qrbox: 250 },
+            onScanSuccess
+        );
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                console.log("Scanner stopped");
+            }).catch(err => console.error("Stop failed", err));
+        }
+    }
+
+    // Auto start waktu halaman dibuka
+    window.addEventListener("load", startScanner);
+</script>
+
+<!-- Form Input -->
+<div class="card mt-3">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <i class="bi bi-box-arrow-in-down"></i> Input Barang Masuk
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="kode_barang" class="form-label">Kode Barang</label>
+                    <input type="text" id="kode_barang" name="kode_barang"
+                           class="form-control"
+                           value="{% if qr_result and not request.GET %}{{ qr_result }}{% endif %}">
+
+                </div>
+                <div class="mb-3">
+                    <label for="qty" class="form-label">Qty</label>
+                    <input type="number" id="qty" name="qty" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Simpan</button>
+            </form>
+        </div>
+    </div>
+</div>
+<table class="table table-striped mt-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Kode Barang</th>
+            <th>Nama Barang</th>
+            <th>Qty</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in masuk_list  %}
+        <tr>
+            <td>{{ item.item.kode_barang }}</td>
+            <td>{{ item.item.nama_barang }}</td>
+            <td>{{ item.qty }}</td>
+            <td>{{ item.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Showing
+        {{ masuk_list.start_index }}
+        to
+        {{ masuk_list.end_index }}
+        of
+        {{ masuk_list.paginator.count }} entries
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            {% if masuk_list.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ masuk_list.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for i in masuk_list.paginator.page_range %}
+            {% if masuk_list.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if masuk_list.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ masuk_list.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+{% endblock %}
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // reset text & file input setiap kali reload halaman
+        document.getElementById("kode_barang").value = "";
+        document.querySelector("input[name='qr_file']").value = "";
+    });
+</script>

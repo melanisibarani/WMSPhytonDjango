@@ -1,0 +1,139 @@
+﻿{% extends "warehouse/base.html" %}
+
+{% block title %}Barang Keluar{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📤 Barang Keluar</h2>
+
+<!-- QR Code Scanner -->
+<div class="card mt-3">
+    <div class="card-header">Scan QR Code</div>
+    <div class="card-body text-center">
+        <div id="reader" style="width: 350px; margin:auto;"></div>
+        <button class="btn btn-danger mt-2" onclick="stopScanner()">Stop Scanning</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+    let html5QrCode;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        document.getElementById("id_item").value = decodedText; // isi input otomatis
+    }
+
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            onScanSuccess
+        );
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                console.log("Scanner stopped");
+            }).catch(err => console.error("Stop failed", err));
+        }
+    }
+
+    window.addEventListener("load", startScanner);
+</script>
+
+<!-- Form Input -->
+<div class="card mt-3 shadow-sm">
+    <div class="card-header bg-danger text-white">
+        <i class="bi bi-box-arrow-up"></i> Input Barang Keluar
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_item" class="form-label">Kode Barang</label>
+                <input type="text" id="id_item" name="kode_barang" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label for="qty" class="form-label">Qty</label>
+                <input type="number" id="qty" name="qty" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-danger w-100">Keluarkan</button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabel Transaksi Keluar -->
+<table class="table table-striped mt-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Kode Barang</th>
+            <th>Nama Barang</th>
+            <th>Qty</th>
+            <th>Status</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in keluar_list %}
+        <tr>
+            <td>{{ item.item.kode_barang }}</td>
+            <td>{{ item.item.nama_barang }}</td>
+            <td>{{ item.qty }}</td>
+            <td>{{ item.get_status_display }}</td>
+            <td>
+                <a href="{% url 'print_keluar' item.id %}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    🖨 Print
+                </a>
+
+                <a href="{% url 'print_keluar' pk=item.id %}">Print2</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">Belum ada barang keluar</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Showing
+        {{ keluar_list.start_index }}
+        to
+        {{ keluar_list.end_index }}
+        of
+        {{ keluar_list.paginator.count }} entries
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            {% if keluar_list.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ keluar_list.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for i in keluar_list.paginator.page_range %}
+            {% if keluar_list.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if keluar_list.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ keluar_list.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+{% endblock %}

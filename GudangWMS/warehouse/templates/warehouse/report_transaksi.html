@@ -1,0 +1,151 @@
+﻿{% extends "warehouse/base.html" %}
+{% block title %}Report Transaksi{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">Report Transaksi</h3>
+
+<form class="row g-2 mb-3" method="get">
+    <div class="col-auto">
+        <select name="period" class="form-select" onchange="this.form.submit()">
+            <option value="date" {% if request.GET.period == 'date' or not request.GET.period %}selected{% endif %}>Date</option>
+            <option value="month" {% if request.GET.period == 'month' %}selected{% endif %}>Month</option>
+            <option value="year" {% if request.GET.period == 'year' %}selected{% endif %}>Year</option>
+        </select>
+    </div>
+
+    <div class="col">
+        <div id="filter-date" class="row g-2" {% if request.GET.period and request.GET.period != 'date' %}hidden{% endif %}>
+            <div class="col-auto"><input type="date" name="start" value="{{ request.GET.start }}" class="form-control"></div>
+            <div class="col-auto"><input type="date" name="end" value="{{ request.GET.end }}" class="form-control"></div>
+        </div>
+        <div id="filter-month" class="row g-2" {% if request.GET.period != 'month' %}hidden{% endif %}>
+            <div class="col-auto"><input type="number" name="year" value="{{ request.GET.year }}" placeholder="Year" class="form-control"></div>
+            <div class="col-auto"><input type="number" name="month" value="{{ request.GET.month }}" placeholder="Month (1-12)" class="form-control"></div>
+        </div>
+        <div id="filter-year" class="row g-2" {% if request.GET.period != 'year' %}hidden{% endif %}>
+            <div class="col-auto"><input type="number" name="year" value="{{ request.GET.year }}" placeholder="Year" class="form-control"></div>
+        </div>
+    </div>
+
+    <div class="col-auto"><button class="btn btn-primary">Filter</button></div>
+    <div class="col-auto">
+        <a class="btn btn-outline-danger" href="{% url 'export_transaksi_pdf' %}?{{ request.GET.urlencode }}">Export PDF</a>
+        <a class="btn btn-outline-success" href="{% url 'export_transaksi_xlsx' %}?{{ request.GET.urlencode }}">Export Excel</a>
+    </div>
+</form>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <div class="small text-uppercase">Total Masuk</div>
+                <div class="display-6">{{ total_in }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body">
+                <div class="small text-uppercase">Total Keluar</div>
+                <div class="display-6">{{ total_out }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">Grafik Transaksi per Bulan ({{ year }})</div>
+    <div class="card-body">
+        <canvas id="trxChart" height="80"></canvas>
+    </div>
+</div>
+
+<table class="table table-striped mt-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Tanggal</th>
+            <th>Jenis</th>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Qty</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in transaksi_list %}
+        <tr>
+            <td>{{ t.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ t.get_jenis_display }}</td>
+            <td>{{ t.item.kode_barang }}</td>
+            <td>{{ t.item.nama_barang }}</td>
+            <td>{{ t.qty }}</td>
+            <td>{{ t.get_status_barang_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Showing
+        {{ transaksi_list.start_index }}
+        to
+        {{ transaksi_list.end_index }}
+        of
+        {{ transaksi_list.paginator.count }} entries
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            {% if transaksi_list.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ transaksi_list.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for i in transaksi_list.paginator.page_range %}
+            {% if transaksi_list.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?{{ request.GET.urlencode }}&page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if transaksi_list.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ transaksi_list.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+
+<script>
+  const ctx = document.getElementById('trxChart')
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
+      datasets: [
+        { label: 'Masuk', data: {{ in_series|safe }} },
+        { label: 'Keluar', data: {{ out_series|safe }} }
+      ]
+    }
+  });
+
+  const periodSel = document.querySelector('select[name="period"]');
+  periodSel.addEventListener('change', () => {
+    document.getElementById('filter-date').hidden  = periodSel.value !== 'date';
+    document.getElementById('filter-month').hidden = periodSel.value !== 'month';
+    document.getElementById('filter-year').hidden  = periodSel.value !== 'year';
+  });
+</script>
+{% endblock %}

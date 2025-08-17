@@ -1,0 +1,73 @@
+﻿{% extends "warehouse/base.html" %}
+
+{% block title %}Kartu Stok{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📝 Kartu Stok</h2>
+<button onclick="window.print()" class="btn btn-primary mb-3">🖨 Print</button>
+
+<table class="table table-striped shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>Tanggal</th>
+            <th>Kode Barang</th>
+            <th>Nama Barang</th>
+            <th>Qty In</th>
+            <th>Qty Out</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for trx in kartu_stok %}
+        <tr>
+            <td>{{ trx.tanggal|date:"d-m-Y" }}</td>
+            <td>{{ trx.item.kode_barang }}</td>
+            <td>{{ trx.item.nama_barang }}</td>
+            <td>{{ trx.qty_in }}</td>
+            <td>{{ trx.qty_out }}</td>
+            <td>{{ trx.total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        Showing
+        {{ kartu_stok.start_index }}
+        to
+        {{ kartu_stok.end_index }}
+        of
+        {{ kartu_stok.paginator.count }} entries
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            {% if kartu_stok.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ kartu_stok.previous_page_number }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for i in kartu_stok.paginator.page_range %}
+            {% if masuk_list.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if kartu_stok.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ kartu_stok.next_page_number }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+{% endblock %}
+

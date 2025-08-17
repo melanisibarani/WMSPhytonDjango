@@ -1,0 +1,45 @@
+﻿<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px
+        }
+
+        th, td {
+            border: 1px solid #444;
+            padding: 6px
+        }
+
+        th {
+            background: #eee
+        }
+
+        h3 {
+            margin: 0 0 8px 0
+        }
+    </style>
+</head>
+<body>
+    <h3>Report Transaksi</h3>
+    <table>
+        <thead><tr><th>Tanggal</th><th>Jenis</th><th>Kode</th><th>Nama</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for t in rows %}
+            <tr>
+                <td>{{ t.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ t.get_jenis_display }}</td>
+                <td>{{ t.item.kode_barang }}</td>
+                <td>{{ t.item.nama_barang }}</td>
+                <td>{{ t.qty }}</td>
+                <td>{{ t.get_status_barang_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><b>Total Masuk:</b> {{ total_in }} &nbsp;&nbsp; <b>Total Keluar:</b> {{ total_out }}</p>
+</body>
+</html>
