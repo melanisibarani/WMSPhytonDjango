@@ -42,6 +42,10 @@ class Barang(models.Model):
 
     def __str__(self):
         return f"{self.kode_barang} - {self.nama_barang}"
+    def stok_realtime(self):
+        masuk = self.transactions.filter(jenis=Transaksi.IN).aggregate(total=Sum('qty'))['total'] or 0
+        keluar = self.transactions.filter(jenis=Transaksi.OUT).aggregate(total=Sum('qty'))['total'] or 0
+        return masuk - keluar
 class Transaksi(models.Model):
     IN = 'IN'
     OUT = 'OUT'

@@ -23,9 +23,9 @@
                 <tr>
                     <td>{{ item.kode_barang }}</td>
                     <td>{{ item.nama_barang }}</td>
-                    <td>{{ item.total_qty }}</td>
+                    <td>{{ item.qty_total }}</td>
                     <td>
-                        {% if item.status == "aktif" %}
+                        {% if item.status_barang == "aktif" %}
                         <span class="badge bg-success">Aktif</span>
                         {% else %}
                         <span class="badge bg-secondary">Non Aktif</span>
