@@ -438,3 +438,22 @@ def upload_qr(request):
         "masuk_list": masuk_list,
         "qr_result": qr_result
     })
+
+# apps.py atau signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import Barang, Transaksi
+from django.contrib.auth import get_user_model
+User = get_user_model()
+@receiver(post_save, sender=Barang)
+
+def create_initial_transaction(sender, instance, created, **kwargs):
+    if created:  # hanya saat barang baru dibuat
+        default_user = User.objects.first()
+        Transaksi.objects.create(
+            item=instance,              # ganti ke 'item'
+            qty=instance.qty_total,     # qty awal dari barang
+            jenis=Transaksi.IN,
+            created_by= default_user
+        )
+
